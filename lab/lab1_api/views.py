@@ -11,25 +11,29 @@ from .service import *
 class stadiumList(generics.ListCreateAPIView):
     queryset = Stadium.objects.all()
     serializer_class = StadiumSerializer
-    page_size = 100
 
     def get(self, request, *args, **kwargs):
         rowParam = request.query_params.get("pageNumber")
-        if rowParam is not None:
-            rowNumber = StadiumLogic.getPageNumber()
-            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
-
         pageNumber = request.query_params.get("page")
         nameParam = request.query_params.get("name")
+
+        if rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = StadiumLogic.getPageNumber(rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+
         if pageNumber is None and nameParam is None:
             return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
 
-        if pageNumber is None:
+        if pageNumber is None and nameParam != "":
             return Response(StadiumLogic.getAutocompleteStadium(nameParam))
+        elif pageNumber is None:
+            return Response([{}], status=status.HTTP_200_OK)     
         
         pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
         if nameParam is None:
-            return Response(StadiumLogic.getPagedStadiums(pageNumber))
+            return Response(StadiumLogic.getPagedStadiums(pageNumber, rowParam))
 
         return Response({}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -42,10 +46,40 @@ class stadiumDetail(generics.RetrieveUpdateDestroyAPIView):
 class clubList(generics.ListCreateAPIView):
     queryset = Club.objects.all()
     serializer_class = simpleClubSerializer
-    page_size = 100
 
     def get(self, request, *args, **kwargs):
-        return Response(ClubLogic.getClubsWithLeagues())
+        rowParam = request.query_params.get("pageNumber")
+        budgetFilterParam = request.query_params.get("budgetFilter")
+        pageNumber = request.query_params.get("page")
+        nameParam = request.query_params.get("name")
+
+        if rowParam is not None and budgetFilterParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = ClubLogic.getBudgetFilteredPageNumber(budgetFilterParam, rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+        elif rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = ClubLogic.getPageNumber(rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+
+        pageNumber = request.query_params.get("page")
+        nameParam = request.query_params.get("name")
+        if pageNumber is None and nameParam is None:
+            return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
+
+        if pageNumber is None and nameParam != "":
+            return Response(ClubLogic.getAutocompleteClub(nameParam))
+        elif pageNumber is None:
+            return Response([{}], status=status.HTTP_200_OK) 
+        
+        pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
+        if nameParam is None and budgetFilterParam is None:
+            return Response(ClubLogic.getPagedClubs(pageNumber, rowParam))
+        elif nameParam is None:
+            return Response(ClubLogic.filterClubByAnnualBudget(budgetFilterParam, pageNumber, rowParam))
+        
+        return Response({}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
 class clubDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Club.objects.all()
@@ -58,7 +92,7 @@ class clubDetail(generics.RetrieveUpdateDestroyAPIView):
 class clubWithLeague(APIView):
     def post(self, request, *args, **kwargs):
         club = request.data
-        error = ClubLogic.saveCubWithLeague(club)
+        error = ClubLogic.saveClubWithLeague(club)
 
         if error:
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
@@ -74,32 +108,56 @@ class clubsWithCompetitionMatches(APIView):
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({}, status=status.HTTP_201_CREATED)
-
-#Filter class for clubs
-class clubFilteredList(APIView):
-    page_size = 100
-    def get(self, request, budget, format=None):
-        return Response(ClubLogic.filterClubByAnnualBudget(budget))
     
-
 #Statics for clubs by Stadium
-class clubStadiumCapacity(generics.ListAPIView):
-    serializer_class = simpleClubSerializer
-    page_size = 100
+class clubStadiumCapacity(APIView):
+    def get(self, request, *args, **kwargs):
+        rowParam = request.query_params.get("pageNumber")
+        pageNumber = request.query_params.get("page")
 
-    def get_queryset(self):
-        return ClubLogic.getStadiumCapacityQuery()
+        if rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = ClubLogic.getStadiumCapacityStatisticsPageNumber(rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+
+        if pageNumber is None:
+            return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
+        
+        pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
+        return Response(ClubLogic.getStadiumCapacityStatistics(pageNumber, rowParam))
 
 #Competition-----------------------------------------------------------------------------------------------------------------
 class competitionList(generics.ListCreateAPIView):
     queryset = Competition.objects.all()
     serializer_class = simpleCompetitionSerializer
-    page_size = 100
 
     def get(self, request, *args, **kwargs):
-        return Response(CompetitionLogic.getCompetitionsWithLeagueClubs())
+        rowParam = request.query_params.get("pageNumber")
+        pageNumber = request.query_params.get("page")
+        nameParam = request.query_params.get("name")
 
+        if rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = CompetitionLogic.getPageNumber(rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
 
+       
+        if pageNumber is None and nameParam is None:
+            return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
+
+        if pageNumber is None and nameParam != "":
+            return Response(CompetitionLogic.getAutocompleteComps(nameParam))
+        elif pageNumber is None:
+            return Response([{}], status=status.HTTP_200_OK) 
+        
+        pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
+        if nameParam is None:
+            return Response(CompetitionLogic.getPagedComps(pageNumber, rowParam))
+
+        return Response({}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        
 class competitionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Competition.objects.all()
     serializer_class = simpleCompetitionSerializer
@@ -140,10 +198,31 @@ class UpdateClubLeagues(APIView):
 class matchesPlayedList(generics.ListCreateAPIView):
     queryset = MatchesPlayed.objects.all()
     serializer_class = simpleMatchesPlayedSerializer
-    page_size = 100
 
     def get(self, request, *args, **kwargs):
-        return Response(MatchesPlayedLogic.getMatchesWithDetail())
+        rowParam = request.query_params.get("pageNumber")
+        pageNumber = request.query_params.get("page")
+        nameParam = request.query_params.get("date")
+
+        if rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = MatchesPlayedLogic.getPageNumber(rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+        
+        if pageNumber is None and nameParam is None:
+            return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
+
+        if pageNumber is None and nameParam != "":
+            return Response(MatchesPlayedLogic.getAutocompleteDates(nameParam))
+        elif pageNumber is None:
+            return Response([{}], status=status.HTTP_200_OK) 
+        
+        pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
+        if nameParam is None:
+            return Response(MatchesPlayedLogic.getPagedMatches(pageNumber, rowParam))
+
+        return Response({}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
 class matchesPlayedDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -154,10 +233,22 @@ class matchesPlayedDetail(generics.RetrieveUpdateDestroyAPIView):
     def get(self, request, id, *args, **kwargs):
         return Response(MatchesPlayedLogic.getSingleMatchPlayedWithDetail(id))
 
-
 class specificCompetitionMatchesDetail(APIView):
     def get(self, request, compId, *args, **kwargs):
-        return Response(MatchesPlayedLogic.getCompetitionSpecificMatch(compId))
+        rowParam = request.query_params.get("pageNumber")
+        pageNumber = request.query_params.get("page")
+
+        if rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = MatchesPlayedLogic.getCompetitionSpecificPageNumber(compId, rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+
+        if pageNumber is None:
+            return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
+        
+        pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
+        return Response(MatchesPlayedLogic.getCompetitionSpecificMatch(compId, pageNumber, rowParam))
     
     def post(self, request, compId,*args, **kwargs):
         data = request.data
@@ -166,18 +257,55 @@ class specificCompetitionMatchesDetail(APIView):
             return Response({}, status=status.HTTP_201_CREATED)
         return Response({}, status=status.HTTP_400_BAD_REQUEST)
     
+    def put(self, request, compId, *args, **kwargs):
+        data = request.data
+        error = MatchesPlayedLogic.updateCompetitionSpecificMatch(data)
+
+        if error:
+            return Response({}, status=status.HTTP_201_CREATED)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, compId, *args, **kwargs):
+        MatchesPlayedLogic.deleteCompetitionSpecificMatch(compId)
+        return Response({"res": "club deleted"}, status=status.HTTP_200_OK)
+    
 
 class specificClubMatchesDetail(APIView):
     def get(self, request, clubId, *args, **kwargs):
-        return Response(MatchesPlayedLogic.getClubSpecificMatch(clubId))
+        rowParam = request.query_params.get("pageNumber")
+        pageNumber = request.query_params.get("page")
+
+        if rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = MatchesPlayedLogic.getClubSpecificPageNumber(clubId, rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+
+        if pageNumber is None:
+            return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
+        
+        pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
+        return Response(MatchesPlayedLogic.getClubSpecificMatch(clubId, pageNumber, rowParam))
     
     def post(self, request, clubId,*args, **kwargs):
         data = request.data
         error = MatchesPlayedLogic.saveClubSpecificMatch(data, clubId)
         
         if error:
-            return Response({}, status=status.HTTP_201_CREATED)
-        return Response({}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({}, status=status.HTTP_201_CREATED)
+    
+    def put(self, request, clubId, *args, **kwargs):
+        data = request.data
+        error = MatchesPlayedLogic.updateClubSpecificMatch(data)
+
+        if error:
+            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({}, status=status.HTTP_201_CREATED)
+    
+    def delete(self, request, clubId, *args, **kwargs):
+        MatchesPlayedLogic.deleteClubSpecificMatch(clubId)
+        return Response({"res": "club deleted"}, status=status.HTTP_200_OK)
     
 class verySpecificMatchesDetail(APIView):
     def get(self, request, compSpecId, clubSpecId, *args, **kwargs):
@@ -192,7 +320,6 @@ class verySpecificMatchesDetail(APIView):
         return Response({}, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, compSpecId, clubSpecId, *args, **kwargs):
-        mat = MatchesPlayed.objects.get(Q(club1=clubSpecId) & Q(competition=compSpecId))
         data = request.data
         error = MatchesPlayedLogic.updateClubAndCompetitionSpecificMatch(data, clubSpecId, compSpecId)
 
@@ -205,10 +332,19 @@ class verySpecificMatchesDetail(APIView):
         return Response({"res": "club deleted"}, status=status.HTTP_200_OK)
 
 #LeaguesByAverage---------------------------------------------------------------------------------------------------------------------
-class leaguesByAverage(generics.ListAPIView):
-    serializer_class = simpleCompetitionSerializer
-    page_size = 100
+class leaguesByAverage(APIView):
+    def get(self, request, *args, **kwargs):
+        rowParam = request.query_params.get("pageNumber")
+        pageNumber = request.query_params.get("page")
 
-    #Making the query for the statistical report 
-    def get_queryset(self):
-        return CompetitionLogic.getLeaguesByClubAnnualBudgetQuery()
+        if rowParam is not None and pageNumber is None:
+            rowParam = int(rowParam)
+            rowNumber = CompetitionLogic.getLeaguesByClubAnnualBudgetPageNumber(rowParam)
+            return Response({"pageNumber": rowNumber}, status=status.HTTP_200_OK)
+
+        if pageNumber is None:
+            return Response({"response": "No page recieved"}, status=status.HTTP_200_OK)
+        
+        pageNumber = int(pageNumber)
+        rowParam = int(rowParam)
+        return Response(CompetitionLogic.getLeaguesByClubAnnualBudget(pageNumber, rowParam))
