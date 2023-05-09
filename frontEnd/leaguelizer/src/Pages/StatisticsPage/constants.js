@@ -1,6 +1,6 @@
 // const statURLS = {
-//     "league" : "https://SArnold-sdi-22-23.chickenkiller.com/api/leaguesByAnnualBudget/",
-//     "clubs" : "https://SArnold-sdi-22-23.chickenkiller.com/api/clubsByStadiumCapacity/",
+//     "league" : "https://Matyas-Andras-SDI-Lab.chickenkiller.com/api/leaguesByAnnualBudget/",
+//     "clubs" : "https://Matyas-Andras-SDI-Lab.chickenkiller.com/api/clubsByStadiumCapacity/",
 // } 
 
 const statURLS = {
