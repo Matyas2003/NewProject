@@ -45,6 +45,12 @@ INSTALLED_APPS = [
     'lab1_api',
     'corsheaders',
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -85,12 +91,12 @@ WSGI_APPLICATION = 'lab1.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('django.db.backends.postgresql_psycopg2'),
-        'NAME': os.environ.get('league'),
-        'USER': os.environ.get('postgres'),
-        'PASSWORD': os.environ.get('postgres'),
-        'HOST': os.environ.get('localhost'),
-        'PORT': os.environ.get('5432'),
+        'ENGINE': os.environ.get('DB_ENGINE'),
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
     }
 }
 
