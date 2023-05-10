@@ -8,7 +8,6 @@ from django.conf import settings
 from django.utils import timezone
 from math import ceil
 import random
-import hashlib
 
 User = get_user_model()
 
@@ -75,6 +74,35 @@ class UserLogic:
     @staticmethod
     def getUserDetail(id):
         return UserDetailSerializer(UserDetail.objects.get(userName__id=id)).data
+    
+    @staticmethod
+    def getPageNumber(row):
+        # return Stadium.objects.count()/row
+        cursor = connection.cursor()
+        cursor.execute("select reltuples::bigint as estimate from pg_class where oid = to_regclass('lab1_api_user');")
+        fetchedRow = cursor.fetchone()
+        return ceil(fetchedRow[0]/row)
+    
+    @staticmethod
+    def getPagedUsers(page, row):
+        return UserSerializer(User.objects.filter(Q(id__gt=row*(page - 1)) & Q(id__lt=row*(page + 100)))[:row], many = True).data
+    
+    @staticmethod
+    def getAutocompleteUser(name):
+        return UserSerializer(User.objects.filter(username__icontains=name)[:20], many = True).data
+    
+    @staticmethod
+    def updateUserRole(id, role):
+        user = User.objects.get(id=id)
+        if role["role"] != "Admin" and role["role"] != "Moderator" and role["role"] != "Regular":
+            return True 
+
+        serializer = UserSerializer(instance=user, data=role, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+        else: return True
+        
+        return False
 
 class StadiumLogic:
     @staticmethod
@@ -83,12 +111,12 @@ class StadiumLogic:
     
     @staticmethod
     def getAutocompleteStadium(name):
-        return StadiumSerializer(Stadium.objects.filter(name__icontains=name)[:20], many = True).data
-        # return StadiumSerializer(Stadium.objects.raw('select * from "lab1_api_stadium" where search @@ plainto_tsquery(%s) limit 20;', (name,))[:20], many = True).data
+        # return StadiumSerializer(Stadium.objects.filter(name__icontains=name)[:20], many = True).data
+        return StadiumSerializer(Stadium.objects.raw('select * from "lab1_api_stadium" where search @@ plainto_tsquery(%s) limit 20;', (name,))[:20], many = True).data
     
     @staticmethod
     def getPageNumber(row):
-        return Stadium.objects.count()/row
+        # return Stadium.objects.count()/row
         cursor = connection.cursor()
         cursor.execute("select reltuples::bigint as estimate from pg_class where oid = to_regclass('lab1_api_stadium');")
         fetchedRow = cursor.fetchone()
@@ -98,7 +126,7 @@ class StadiumLogic:
 class ClubLogic:
     @staticmethod
     def getPageNumber(row):
-        return Club.objects.count()/row
+        # return Club.objects.count()/row
         cursor = connection.cursor()
         cursor.execute("select reltuples::bigint as estimate from pg_class where oid = to_regclass('lab1_api_club');")
         fetchedRow = cursor.fetchone()
@@ -114,8 +142,8 @@ class ClubLogic:
     
     @staticmethod
     def getAutocompleteClub(name):
-        return clubSerializer(Club.objects.filter(name__icontains=name)[:20], many = True).data
-        # return StadiumSerializer(Stadium.objects.raw('select * from "lab1_api_club" where search @@ plainto_tsquery(%s) limit 20;', (name,))[:20], many = True).data
+        # return clubSerializer(Club.objects.filter(name__icontains=name)[:20], many = True).data
+        return StadiumSerializer(Stadium.objects.raw('select * from "lab1_api_club" where search @@ plainto_tsquery(%s) limit 20;', (name,))[:20], many = True).data
     
     @staticmethod
     def getStadiumCapacityStatisticsPageNumber(row):
@@ -192,7 +220,7 @@ class ClubLogic:
 class CompetitionLogic:
     @staticmethod
     def getPageNumber(row):
-        return Competition.objects.count()/row
+        # return Competition.objects.count()/row
         cursor = connection.cursor()
         cursor.execute("select reltuples::bigint as estimate from pg_class where oid = to_regclass('lab1_api_competition');")
         fetchedRow = cursor.fetchone()
@@ -204,9 +232,9 @@ class CompetitionLogic:
     
     @staticmethod
     def getAutocompleteComps(name):
-        return competitionSerializer(Competition.objects.filter(name__icontains=name)[:20], many = True).data
-        # return StadiumSerializer(Stadium.objects.raw('select * from "lab1_api_competition" where search @@ plainto_tsquery(%s) limit 20;', (name,))[:20], many = True).data
-
+        # return competitionSerializer(Competition.objects.filter(name__icontains=name)[:20], many = True).data
+        return StadiumSerializer(Stadium.objects.raw('select * from "lab1_api_competition" where search @@ plainto_tsquery(%s) limit 20;', (name,))[:20], many = True).data
+    
     @staticmethod
     def getsingleCompetitionWithLeagueClub(id):
         return competitionSerializer(Competition.objects.get(id=id)).data
@@ -242,7 +270,6 @@ class CompetitionLogic:
         for club in clubs:
             club['league'] = newCompId
             club['user'] = obj.user.id
-            print(club)
             clubSerializer = simpleClubSerializer(data=club)
             if clubSerializer.is_valid():
                 clubSerializer.save()
@@ -282,12 +309,14 @@ class CompetitionLogic:
         return False
     
     @staticmethod
-    def updateClubLeagues(clubs, compID):
+    def updateClubLeagues(view, request, clubs, compID):
         clubs = clubs.get("clubs")
 
         currentComp = Competition.objects.filter(id=compID).first()
         if currentComp is None:
             return True
+        
+        view.check_object_permissions(request, currentComp)
 
         for clubID in clubs:
             currentClub = Club.objects.filter(id=clubID).first()
@@ -304,7 +333,7 @@ class CompetitionLogic:
 class MatchesPlayedLogic:
     @staticmethod
     def getPageNumber(row):
-        return MatchesPlayed.objects.count()/row
+        # return MatchesPlayed.objects.count()/row
         cursor = connection.cursor()
         cursor.execute("select reltuples::bigint as estimate from pg_class where oid = to_regclass('lab1_api_matchesplayed');")
         fetchedRow = cursor.fetchone()
@@ -333,7 +362,6 @@ class MatchesPlayedLogic:
     @staticmethod
     def saveCompetitionSpecificMatch(data, id):
         data["competition"] = id
-        print(data)
         serializer = simpleMatchesPlayedSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -342,8 +370,9 @@ class MatchesPlayedLogic:
         return False
     
     @staticmethod
-    def updateCompetitionSpecificMatch(data):
+    def updateCompetitionSpecificMatch(view, request, data):
         mat = MatchesPlayed.objects.get(id=data["id"])
+        view.check_object_permissions(request, mat)
         serializer = simpleMatchesPlayedSerializer(instance=mat, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -375,10 +404,10 @@ class MatchesPlayedLogic:
         return False
     
     @staticmethod
-    def updateClubSpecificMatch(data, clubId):
+    def updateClubSpecificMatch(view, request, data, clubId):
         mat = MatchesPlayed.objects.get(id=data["id"])
+        view.check_object_permissions(request, mat)
         data["club1"] = clubId
-        print(data)
         serializer = simpleMatchesPlayedSerializer(instance=mat, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -407,8 +436,9 @@ class MatchesPlayedLogic:
         return False
     
     @staticmethod
-    def updateClubAndCompetitionSpecificMatch(data, clubId, compId):
+    def updateClubAndCompetitionSpecificMatch(view, request, data, clubId, compId):
         mat = MatchesPlayed.objects.get(Q(club1=clubId) & Q(competition=compId))
+        view.check_object_permissions(request, mat)
         serializer = simpleMatchesPlayedSerializer(instance=mat, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
