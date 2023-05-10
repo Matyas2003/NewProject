@@ -5,7 +5,7 @@ import ToasterError from "../../Layouts/ErrorLayout/ToasterError";
 import authContext from "../../Context/Context";
 
 export default function CustomForm(props) {
-    let {user} = useContext(authContext);
+    let {user, tokens} = useContext(authContext);
     const [club1Value, setClub1Value] = useState(props.value.club1.name);
     const [club2Value, setClub2Value] = useState(props.value.club2.name);
     const [compValue, setCompValue] = useState(props.value.competition.name);
@@ -66,7 +66,7 @@ export default function CustomForm(props) {
 
         const requestOptions = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization':'Bearer ' + String(tokens?.access) },
             body: JSON.stringify({
                 "club1": club1Value,
                 "club2": club2Value,
@@ -106,10 +106,14 @@ export default function CustomForm(props) {
             ToasterError("Id needs to be a positive integer");
             return;
         }
+        if (user.role === "Regular" && user.user_id !== props.value.user.id){
+            ToasterError("It's not your Match!");
+            return;
+        }
 
         const requestOptions = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization':'Bearer ' + String(tokens?.access) },
             body: JSON.stringify({
                 "club1": (/^[0-9]+$/.test(club1Value)) ? club1Value : props.value.club1.id,
                 "club2": (/^[0-9]+$/.test(club2Value)) ? club2Value : props.value.club2.id,
@@ -150,7 +154,8 @@ export default function CustomForm(props) {
         }
 
         const requestOptions = {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'Authorization':'Bearer ' + String(tokens?.access) }
         };
 
         const URL = URL_BASE + String(props.value.id)
@@ -174,11 +179,13 @@ export default function CustomForm(props) {
                     sx={{width:"40%", mt:3}}
                 >Date</TextField>
             </Grid>
+            {(user !== null) ? ((user.role === "Regular" || user.role === "Moderator" || user.role === "Admin")) ?
             <Grid container sx={{display: "flex", flexDirection: "row", justifyContent: "space-between", pt: 5}}>
                 <Button variant="contained" onClick={postButtonHandler}>Post</Button>
                 <Button variant="contained" onClick={putButtonHandler}>Put</Button>
-                <Button variant="contained" sx={{bgcolor: "red"}} onClick={deleteButtonHandler}>Delete</Button>
-            </Grid>
+                {((user.role === "Regular" || user.role === "Moderator" || user.role === "Admin")) ?
+                <Button variant="contained" sx={{bgcolor: "red"}} onClick={deleteButtonHandler}>Delete</Button> : null }
+            </Grid> : null : null }
         </form>
     );
 }

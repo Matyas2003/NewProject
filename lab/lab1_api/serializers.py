@@ -12,14 +12,15 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
 
-        token['id'] = user.id
+        token['user_id'] = user.id
+        token['role'] = user.role
 
         return token
     
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username")
+        fields = ("id", "username", "role")
     
 #UserDetail Serializer
 class UserDetailSerializer(serializers.ModelSerializer):
