@@ -8,9 +8,9 @@ fake = Faker()
 competitionTypeList = ["League", "Knockout"]
 roundOfPlayList = ["G", "R16", "QF", "SM", "F", "L"]
 
-sqlText = "\c leaguelizer;\n"
+sqlText = "\c league;\n"
 
-with open("lab/SQLQueries/data3.sql", "w") as file:
+with open("data3.sql", "w") as file:
     print("Writing")
     file.write(sqlText)
 
@@ -76,7 +76,7 @@ def addStadiums():
 
         stadiumText += insertText
 
-    with open("lab/SQLQueries/data3.sql", "a") as file:
+    with open("data3.sql", "a") as file:
         file.write(stadiumText)
 
 def addCompetition():
@@ -91,7 +91,7 @@ def addCompetition():
 
         compText += insertText
 
-    with open("lab/SQLQueries/data3.sql", "a") as file:
+    with open("data3.sql", "a") as file:
         file.write(compText)
 
 def addClub():
@@ -106,7 +106,7 @@ def addClub():
 
         clubText += insertText
 
-    with open("lab/SQLQueries/data3.sql", "a") as file:
+    with open("data3.sql", "a") as file:
         file.write(clubText)
 
 def addMatches():
@@ -122,7 +122,7 @@ def addMatches():
         matchText += insertText
 
         if int((i + 1) % 500) == 0:
-            with open("lab/SQLQueries/data3.sql", "a") as file:
+            with open("data3.sql", "a") as file:
                 file.write(matchText)
 
             matchText = ""
@@ -158,6 +158,6 @@ print(end-start)
 # addClub()
 # addMatches()
 
-# with open("lab/SQLQueries/data2.sql", "w") as file:
+# with open("data2.sql", "w") as file:
 #     print("Writing")
 #     file.write(sqlText)

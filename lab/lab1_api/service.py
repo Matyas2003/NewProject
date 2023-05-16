@@ -103,6 +103,14 @@ class UserLogic:
         else: return True
         
         return False
+    
+    @staticmethod
+    def updatePagination(id, value):
+        user = UserDetail.objects.get(userName__id=id)
+        user.paginationValue = value.get("paginationValue")
+        user.save()
+        
+        return False
 
 class StadiumLogic:
     @staticmethod
@@ -121,7 +129,16 @@ class StadiumLogic:
         cursor.execute("select reltuples::bigint as estimate from pg_class where oid = to_regclass('lab1_api_stadium');")
         fetchedRow = cursor.fetchone()
         return ceil(fetchedRow[0]/row)
-        
+    
+    @staticmethod
+    def bulkDelete(data):
+        for item in data:
+            try:
+                obj = Stadium.objects.get(id=item.get("id"))
+                obj.delete()
+            except:
+                continue
+    
 
 class ClubLogic:
     @staticmethod
@@ -216,6 +233,15 @@ class ClubLogic:
             else: return True
         
         return False
+    
+    @staticmethod
+    def bulkDelete(data):
+        for item in data:
+            try:
+                obj = Club.objects.get(id=item.get("id"))
+                obj.delete()
+            except:
+                continue
         
 class CompetitionLogic:
     @staticmethod
@@ -328,6 +354,14 @@ class CompetitionLogic:
             
         return False
             
+    @staticmethod
+    def bulkDelete(data):
+        for item in data:
+            try:
+                obj = Competition.objects.get(id=item.get("id"))
+                obj.delete
+            except:
+                continue
 
     
 class MatchesPlayedLogic:
@@ -450,3 +484,12 @@ class MatchesPlayedLogic:
     def deleteClubAndCompetitionSpecificMatch(clubId, compId):
         mat = MatchesPlayed.objects.get(Q(club1=clubId) & Q(competition=compId))
         mat.delete()
+
+    @staticmethod
+    def bulkDelete(data):
+        for item in data:
+            try:
+                obj = MatchesPlayed.objects.get(id=item.get("id"))
+                obj.delete()
+            except:
+                continue

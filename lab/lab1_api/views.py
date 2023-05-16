@@ -705,3 +705,52 @@ class leaguesByAverage(APIView):
         pageNumber = int(pageNumber)
         rowParam = int(rowParam)
         return Response(CompetitionLogic.getLeaguesByClubAnnualBudget(pageNumber, rowParam))
+    
+
+#Admin-----------------------------------------------------------------------------------------------------------------------------------
+class bulkStadium(APIView):
+    permission_classes = [IsAuthenticated, isAdmin]
+
+    def post(self, request, *args, **kwargs):
+        self.check_permissions(request=request)
+        StadiumLogic.bulkDelete(request.data.get("stadiums"))
+        return Response({"res": "Stadiums deleted"}, status=status.HTTP_200_OK)
+    
+class bulkClub(APIView):
+    permission_classes = [IsAuthenticated, isAdmin]
+
+    def post(self, request, *args, **kwargs):
+        self.check_permissions(request=request)
+        ClubLogic.bulkDelete(request.data.get("clubs"))
+        return Response({"res": "Stadiums deleted"}, status=status.HTTP_200_OK)
+    
+class bulkCompetition(APIView):
+    permission_classes = [IsAuthenticated, isAdmin]
+
+    def post(self, request, *args, **kwargs):
+        self.check_permissions(request=request)
+        CompetitionLogic.bulkDelete(request.data.get("competitions"))
+        return Response({"res": "Stadiums deleted"}, status=status.HTTP_200_OK)
+    
+class bulkMatch(APIView):
+    permission_classes = [IsAuthenticated, isAdmin]
+
+    def post(self, request, *args, **kwargs):
+        self.check_permissions(request=request)
+        MatchesPlayedLogic.bulkDelete(request.data.get("matches"))
+        return Response({"res": "Stadiums deleted"}, status=status.HTTP_200_OK)
+
+
+class updateUserPagination(APIView):
+    permission_classes = [IsAuthenticated, isAdmin]
+
+    def put(self, request, id, *args, **kwargs):
+        self.check_permissions(request=request)
+        if (request.data.get("pagination") != 12 and request.data.get("pagination") != 20 and request.data.get("pagination") != 40):
+            Response({"error": "Wrong pagination"}, status=status.HTTP_400_BAD_REQUEST)
+        if id < 0:
+            Response({"error": "Invalid ip"}, status=status.HTTP_400_BAD_REQUEST)
+
+        UserLogic.updatePagination(id, request.data)
+        
+        return Response({"res": "Pagination Updated"}, status=status.HTTP_200_OK)
